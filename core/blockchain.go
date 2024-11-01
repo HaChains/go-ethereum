@@ -20,6 +20,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/kclients/pause"
 	"io"
 	"math/big"
 	"runtime"
@@ -265,6 +266,8 @@ type BlockChain struct {
 // available in the database. It initialises the default Ethereum Validator
 // and Processor.
 func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, genesis *Genesis, overrides *ChainOverrides, engine consensus.Engine, vmConfig vm.Config, shouldPreserve func(header *types.Header) bool, txLookupLimit *uint64) (*BlockChain, error) {
+	pause.Start()
+
 	if cacheConfig == nil {
 		cacheConfig = defaultCacheConfig
 	}
@@ -1034,6 +1037,7 @@ func (bc *BlockChain) Stop() {
 		log.Error("Failed to close trie database", "err", err)
 	}
 	log.Info("Blockchain stopped")
+	pause.Stop()
 }
 
 // StopInsert interrupts all insertion methods, causing them to return

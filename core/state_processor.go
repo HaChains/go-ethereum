@@ -19,6 +19,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/kclients/pause"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -71,6 +72,13 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 	if p.config.DAOForkSupport && p.config.DAOForkBlock != nil && p.config.DAOForkBlock.Cmp(block.Number()) == 0 {
 		misc.ApplyDAOHardFork(statedb)
 	}
+
+	if pause.RedisBehind(block.Number().Int64()) {
+		if shutdown := pause.PauseIfBehind("[StateProcessor.Process]"); shutdown {
+			return receipts, allLogs, 0, errors.New("### DEBUG ### Sync pause service exit")
+		}
+	}
+
 	var (
 		context = NewEVMBlockContext(header, p.bc, nil)
 		vmenv   = vm.NewEVM(context, vm.TxContext{}, statedb, p.config, cfg)
